@@ -1,22 +1,28 @@
+#! [warn(clippy::all, clippy::pedantic)]
+
 use serde_json::Value;
 use tungstenite::{connect, Message};
 use std::time::{SystemTime, UNIX_EPOCH};
 //use std::thread;
+
 fn main() {
     let (mut socket, response) = connect("wss://data-stream.binance.vision/stream").expect("Can't connect");
     println!("{:?}", response);
-    let subscribe_message_agg = r#"{"method": "SUBSCRIBE", "params": ["btcusdt@aggTrade"], "id": 1}"#;
-    let subscribe_message_depth = r#"{"method": "SUBSCRIBE", "params": ["btcusdt@depth@100ms"], "id": 2}"#;
-    let subscribe_message_book = r#"{"method": "SUBSCRIBE", "params": ["btcusdt@bookTicker"], "id": 3}"#;
-    // let unsubscribe_message = r#"{"method": "UNSUBSCRIBE", "params": ["btcusdt@aggTrade"], "id": 2}"#;
-    // let properties = r#"{"method": "GET_PROPERTY","params":["combined"],"id": 2}"#;
-    socket.send(Message::Text(subscribe_message_agg.to_string())).unwrap();
-    socket.send(Message::Text(subscribe_message_depth.to_string())).unwrap();
-    socket.send(Message::Text(subscribe_message_book.to_string())).unwrap();
+    let subscribe_message = |symbol: &str, stream_type: &str, id: u8| -> String {
+        format!(r#"{{"method": "SUBSCRIBE", "params": ["{}@{}"], "id": {}}}"#, symbol, stream_type, id)
+    };
+    socket.send(Message::Text(subscribe_message("btcusdt", "aggTrade", 1))).unwrap();
+    socket.send(Message::Text(subscribe_message("ethusdt", "aggTrade", 2))).unwrap();
+    socket.send(Message::Text(subscribe_message("btcusdt", "depth@100ms", 3))).unwrap();
+    socket.send(Message::Text(subscribe_message("btcusdt", "bookTicker", 4))).unwrap();
     let mut counter = 0;
     loop {
         // let debut2 = Instant::now();
         let msg = socket.read().expect("Error reading message");
+        if msg.is_ping() {
+            println!("I receive a ping");
+            //socket.send(Message::Pong(vec![3])).expect("Le pong a beug bg");
+        }
         // let duree2 = debut2.elapsed();
         // println!("socket time: {}", duree2.as_micros());
         // let debut = Instant::now();
@@ -31,6 +37,7 @@ fn main() {
                 data.get("q").and_then(|v| v.as_str()),
                 data.get("p").and_then(|v| v.as_str()),
                 data.get("T").and_then(|v| v.as_u64())) {
+                    counter +=1;
                     if counter >= 100 {
                         let temps = SystemTime::now().duration_since(UNIX_EPOCH).expect("Systeme time error").as_millis() as u64;
                         let diff = temps - time;
@@ -45,7 +52,6 @@ fn main() {
         else {
             println!("ça n'a pas marché con {:?}", msg_str);
         }
-        counter +=1;
         // if counter == 10 {
         //     break;
         // }
