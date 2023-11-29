@@ -3,9 +3,17 @@
 use serde_json::Value;
 use tungstenite::{connect, Message};
 use std::time::{SystemTime, UNIX_EPOCH};
-//use std::thread;
+use std::thread;
+use std::sync::mpsc;
 
 fn main() {
+    //let (tx, rx) = mpsc::channel();
+    let data = thread::spawn(get_data);
+    data.join().unwrap();
+}
+
+
+fn get_data () {
     let (mut socket, response) = connect("wss://data-stream.binance.vision/stream").expect("Can't connect");
     println!("{:?}", response);
     let subscribe_message = |symbol: &str, stream_type: &str, id: u8| -> String {
@@ -41,9 +49,10 @@ fn main() {
                     if counter >= 100 {
                         let temps = SystemTime::now().duration_since(UNIX_EPOCH).expect("Systeme time error").as_millis() as u64;
                         let diff = temps - time;
-                        println!("A {time}: {quantity} de {} a été acheté à {price}, nous sommes à {}", symbol.to_string(), diff);
+                        println!("A {time}: {quantity} de {} a été acheté à {price}, retard {} milli_sec", symbol.to_string(), diff);
                         counter = 0;
                     }
+                    println!("A {time}: {quantity} de {} a été acheté à {price}", symbol.to_string());
                 // println!("A {time}: {quantity} de {} a été acheté à {price}", symbol.to_string());
                 // let duree = debut.elapsed();
                 // println!("process time :{}", duree.as_micros());
@@ -57,9 +66,6 @@ fn main() {
         // }
     }
 }
-
-
-
 
 // use reqwest;
 // use serde_json::Value;
