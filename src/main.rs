@@ -13,7 +13,7 @@ fn main() {
         get_data(tx, "btcusdt");
     });
     for recu in rx {
-        println!("On a reçu : {:?}", recu);
+        println!("On a reçu {}", recu.time.elapsed().as_millis());
     }
     miner_btc.join().unwrap();
 }
@@ -36,9 +36,9 @@ fn get_data(tx : Sender<Data>, symbol: &str) {
         let msg_str = msg.to_text().expect("Error convert str");
         let json_msg: Value = serde_json::from_str(msg_str).expect("Error JSON");
         if let (Some(data), Some(stream)) = (json_msg.get("data"), json_msg.get("stream").and_then(|v| v.as_str())) {
-            println!("{:?}", &json_msg["stream"]);
+            // println!("{:?}", &json_msg["stream"]);
             if stream.contains("trade") {
-                process_agg(&mut my_data, data, false);
+                process_agg(&mut my_data, data, true);
             }
             else if stream.contains("depth20@100ms") {
                 process_depth(&mut my_data, data);
@@ -47,24 +47,23 @@ fn get_data(tx : Sender<Data>, symbol: &str) {
         else {
             println!("ça n'a pas marché con {:?}", msg_str);
         }
-        if Instant::now().duration_since(my_data.time_b) >= Duration::from_secs(1) {
+        if Instant::now().duration_since(my_data.time) >= Duration::from_millis(500) {
             tx.send(my_data).unwrap();
-            // my_data = Data::new();
-            break;
+            my_data = Data::new();
         }
     }
 }
 
 #[derive(Debug)]
 struct Data {
-    time_b: Instant,
+    time: Instant,
     trade: Vec<(f32, f32, bool)>,
     orderbook: Vec<(Vec<(f32, f32)>, Vec<(f32, f32)>)>
 }
 
 impl Data {
     fn new() -> Self {
-        Self { time_b: Instant::now(), trade: vec![], orderbook: vec![] }
+        Self { time: Instant::now(), trade: vec![], orderbook: vec![] }
     }
 }
 
@@ -101,8 +100,10 @@ fn process_agg(my_data:&mut Data ,data: &Value, retard: bool) {
             my_data.trade.push((price, quantity, maker));
             if retard {
                 let temps = SystemTime::now().duration_since(UNIX_EPOCH).expect("Systeme time error").as_millis() as u64;
-                let diff = temps - time;
-                println!("retard : {}", diff);
+                let retard = temps - time;
+                if retard >= 500 {
+                    println!("retard : {}", retard);
+                }
             }
         }
 }
