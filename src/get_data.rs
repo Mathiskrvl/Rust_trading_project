@@ -5,7 +5,7 @@ use tungstenite::{connect, Message};
 use std::time::{SystemTime, UNIX_EPOCH, Instant, Duration};
 use std::sync::mpsc::Sender;
 
-pub fn get_data(tx : Sender<Data>, symbol: &str) {
+pub fn get_data(tx : Sender<MyData>, symbol: &str) {
     let (mut socket, response) = connect("wss://data-stream.binance.vision/stream").expect("Can't connect");
     println!("{:?}", response);
     let subscribe_message = |symbol: &str, stream_type: &str, id: u8| -> String {
@@ -17,7 +17,7 @@ pub fn get_data(tx : Sender<Data>, symbol: &str) {
     // socket.read().expect("Subscribe_error");
     socket.read().expect("Subscribe_error");
     socket.read().expect("Subscribe_error");
-    let mut my_data = Data::new();
+    let mut my_data = MyData::new();
     loop {
         let msg = socket.read().expect("Error reading message");
         let msg_str = msg.to_text().expect("Error convert str");
@@ -36,25 +36,25 @@ pub fn get_data(tx : Sender<Data>, symbol: &str) {
         }
         if Instant::now().duration_since(my_data.time) >= Duration::from_millis(500) {
             tx.send(my_data).unwrap();
-            my_data = Data::new();
+            my_data = MyData::new();
         }
     }
 }
 
 #[derive(Debug)]
-pub struct Data {
+pub struct MyData {
     pub time: Instant,
     pub trade: Vec<(f32, f32, bool)>,
     pub orderbook: Vec<(Vec<(f32, f32)>, Vec<(f32, f32)>)>
 }
 
-impl Data {
+impl MyData {
     fn new() -> Self {
         Self { time: Instant::now(), trade: vec![], orderbook: vec![] }
     }
 }
 
-fn process_depth(my_data:&mut Data, data: &Value) {
+fn process_depth(my_data:&mut MyData, data: &Value) {
     if let (Some(asks), Some(bids)) = (data.get("asks").and_then(|v| v.as_array()), data.get("bids").and_then(|v| v.as_array())) {
         let mut data_bids: Vec<(f32, f32)> = vec![];
         for bid in bids.iter().rev() {
@@ -76,7 +76,7 @@ fn process_depth(my_data:&mut Data, data: &Value) {
     }
 }
 
-fn process_agg(my_data:&mut Data ,data: &Value, retard: bool) {
+fn process_agg(my_data:&mut MyData ,data: &Value, retard: bool) {
     if let (Some(maker), Some(quantity), Some(price), Some(time)) = (
         data.get("m").and_then(|v| v.as_bool()),
         data.get("q").and_then(|v| v.as_str()),
