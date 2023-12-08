@@ -38,4 +38,11 @@ impl EncoderConfig {
             relu: ReLU::new()
         }
     }
+    pub fn init_with<B: Backend>(&self, record: EncoderRecord<B>) -> Encoder<B> {
+        Encoder {
+            fc1: LinearConfig::new(self.input_dim, self.fc1_dim).init_with(record.fc1),
+            fc2: LinearConfig::new(self.fc1_dim, self.fc2_dim).init_with(record.fc2),
+            relu: ReLU::new()
+        }
+    }
 }

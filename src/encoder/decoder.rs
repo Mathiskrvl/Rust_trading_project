@@ -30,4 +30,9 @@ impl DecoderConfig {
             fc1: LinearConfig::new(self.output_encoder, self.fc1_dim).init(),
         }
     }
+    pub fn init_with<B: Backend>(&self, record: DecoderRecord<B>) -> Decoder<B> {
+        Decoder {
+            fc1: LinearConfig::new(self.output_encoder, self.fc1_dim).init_with(record.fc1),
+        }
+    }
 }

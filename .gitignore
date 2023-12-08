@@ -1,4 +1,4 @@
 /target
 actor-critic
 test_mnist.rs
-model
+model*

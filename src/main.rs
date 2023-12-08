@@ -1,9 +1,9 @@
 #! [warn(clippy::all, clippy::pedantic)]
 mod get_data;
-// mod test_mnist;
+//mod test_mnist;
 mod encoder;
-
-use encoder::train::training;
+#[allow(dead_code, unused_imports)]
+use encoder::utils::{training, predict};
 //use test_mnist::mnist;
 use get_data::get_data;
 use std::thread;

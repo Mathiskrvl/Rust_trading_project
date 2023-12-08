@@ -35,5 +35,11 @@ impl AutoencoderConfig {
             decoder: DecoderConfig::new(self.output_en, self.output_de).init()
         }
     }
+    pub fn init_with<B: Backend>(&self, record: AutoencoderRecord<B>) -> Autoencoder<B> {
+        Autoencoder {
+            encoder: EncoderConfig::new(self.input_dim_en, self.output_en).init_with(record.encoder),
+            decoder: DecoderConfig::new(self.output_en, self.output_de).init_with(record.decoder)
+        }
+    }
 }
 
