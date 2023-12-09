@@ -50,9 +50,7 @@ pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
             state_encoder = Some(new_state_encoder);
             state_decoder = Some(new_state_decoder);
             let loss = MSELoss::new().forward(output.clone(), inputs.clone(), Reduction::Auto);
-
             println!("[Train - Epoch {} iteration {} - Loss {:.3}", epoch, iteration, loss.clone().into_scalar());
-
             let grads = loss.backward();
             // Gradients linked to each parameter of the model.
             let grads = GradientsParams::from_grads(grads, &model);
@@ -67,10 +65,9 @@ pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
 
         // println!(
         //     "[Valid - Epoch {} - Loss {}", epoch, loss.clone().into_scalar());
-
+    };
     model.clone().save_file(format!("{artifact_dir}/autoencoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
     model.encoder.clone().save_file(format!("{artifact_dir}/encoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
-    };
 }
 
 type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;

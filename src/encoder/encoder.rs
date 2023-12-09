@@ -30,7 +30,7 @@ impl<B: Backend> Encoder<B> {
         let x = x.unsqueeze_dim(1);
 
         let (c, h) = self.lstm.forward(x, state);
-        let (c, h) = (c.squeeze(1), h.squeeze(1));
+        let (c, h) = (c.squeeze(1).detach(), h.squeeze(1).detach());
 
         let x = self.linear1.forward(h.clone());
         let x = self.activation.forward(x);

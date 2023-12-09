@@ -29,7 +29,7 @@ impl<B: Backend> Decoder<B> {
         let x = x.unsqueeze_dim(1);
 
         let (c, h) = self.lstm.forward(x, state);
-        let (c, h) = (c.squeeze::<2>(1), h.squeeze::<2>(1));
+        let (c, h) = (c.squeeze::<2>(1).detach(), h.squeeze::<2>(1).detach());
         let x = h.clone().unsqueeze_dim::<4>(2);
 
         let x = self.convt2.forward(x);
