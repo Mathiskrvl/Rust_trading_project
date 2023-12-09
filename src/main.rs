@@ -3,14 +3,24 @@ mod get_data;
 //mod test_mnist;
 mod encoder;
 #[allow(dead_code, unused_imports)]
-use encoder::utils::{training, predict};
+// use encoder_test::utils::{training, predict};
 //use test_mnist::mnist;
 use get_data::get_data;
 use std::thread;
 use std::sync::mpsc;
 
+// use burn::tensor::{backend::Backend, Tensor, Shape};
+// use burn::backend::{Wgpu, wgpu::AutoGraphicsApi};
+
+// fn example<B: Backend>() {
+//     let tensor = Tensor::<B, 2>::ones(Shape::new([3, 3]));
+//     let tensor = tensor.unsqueeze_dim::<4>(2);
+//     println!("{:?}", tensor.shape());
+// }
+// type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
 fn main() {
-    training();
+    // predict();
+    // example::<MyBackend>();
 }
 
 
