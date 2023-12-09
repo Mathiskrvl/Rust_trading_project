@@ -5,6 +5,7 @@ mod encoder;
 #[allow(dead_code, unused_imports)]
 // use encoder_test::utils::{training, predict};
 //use test_mnist::mnist;
+use encoder::utils::training;
 use get_data::get_data;
 use std::thread;
 use std::sync::mpsc;
@@ -19,7 +20,7 @@ use std::sync::mpsc;
 // }
 // type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
 fn main() {
-    // predict();
+    training();
     // example::<MyBackend>();
 }
 

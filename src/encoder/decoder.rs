@@ -49,9 +49,9 @@ pub struct DecoderConfig {
 impl DecoderConfig {
     pub fn init<B: Backend>(&self) -> Decoder<B> {
         Decoder {
-            linear2: LinearConfig::new(128, 256).init(),
-            linear1: LinearConfig::new(64, 128).init(),
-            lstm: LstmConfig::new(32, 64, true).init(),
+            linear2: LinearConfig::new(256, 128).init(),
+            linear1: LinearConfig::new(128, 64).init(),
+            lstm: LstmConfig::new( 64, 32, true).init(),
             convt2: ConvTranspose2dConfig::new([32, 16], [20, 1]).init(),
             convt1: ConvTranspose2dConfig::new([16, 2], [1, 2]).init(),
             activation: ReLU::new(),

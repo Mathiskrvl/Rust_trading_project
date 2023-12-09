@@ -14,10 +14,10 @@ pub struct Autoencoder<B: Backend> {
 }
 
 impl<B: Backend> Autoencoder<B> {
-    pub fn forward(&self, input: Tensor<B, 4>, state_encoder: Option<(Tensor<B, 2>, Tensor<B, 2>)>, state_decoder: Option<(Tensor<B, 2>, Tensor<B, 2>)>) -> (Tensor<B, 4>, Tensor<B, 2>, Tensor<B, 2>, Tensor<B, 2>, Tensor<B, 2>) {
+    pub fn forward(&self, input: Tensor<B, 4>, state_encoder: Option<(Tensor<B, 2>, Tensor<B, 2>)>, state_decoder: Option<(Tensor<B, 2>, Tensor<B, 2>)>) -> (Tensor<B, 4>, (Tensor<B, 2>, Tensor<B, 2>), (Tensor<B, 2>, Tensor<B, 2>)) {
         let (x, ce, he) = self.encoder.forward(input , state_encoder);
         let (x, cd, hd) = self.decoder.forward(x, state_decoder);
-        (x, ce, he, cd, hd)
+        (x, (ce, he), (cd, hd))
     }
 }
 
