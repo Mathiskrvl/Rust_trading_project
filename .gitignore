@@ -2,3 +2,4 @@
 actor-critic
 test_mnist.rs
 model*
+encoder_test
