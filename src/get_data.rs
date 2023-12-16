@@ -19,11 +19,11 @@ pub fn get_data(tx : Sender<MyData>, symbol: &str) {
     socket.read().expect("Subscribe_error");
     let mut my_data = MyData::new();
     loop {
+        // trouver une solution pour ne pas attendre un message indéfiniment lorsque nous n'avons pu de wiki
         let msg = socket.read().expect("Error reading message");
         let msg_str = msg.to_text().expect("Error convert str");
         let json_msg: Value = serde_json::from_str(msg_str).expect("Error JSON");
         if let (Some(data), Some(stream)) = (json_msg.get("data"), json_msg.get("stream").and_then(|v| v.as_str())) {
-            // println!("{:?}", &json_msg["stream"]);
             if stream.contains("trade") {
                 my_data.process_agg(data, true);
             }
