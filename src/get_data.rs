@@ -17,7 +17,6 @@ pub fn get_data(tx : Sender<MyData>, symbol: &str) {
     // socket.read().expect("Subscribe_error");
     socket.read().expect("Subscribe_error");
     socket.read().expect("Subscribe_error");
-    let debut = Instant::now();
     let mut my_data = MyData::new();
     loop {
         let msg = socket.read().expect("Error reading message");
@@ -32,15 +31,15 @@ pub fn get_data(tx : Sender<MyData>, symbol: &str) {
                 my_data.process_depth(data);
             }
         }
+        else if msg.is_ping() {
+            println!("on a le ping le reuf {:?}", msg);
+        }
         else {
             println!("ça n'a pas marché con {:?}", msg_str);
         }
         if Instant::now().duration_since(my_data.time) >= Duration::from_millis(100) {
             tx.send(my_data).unwrap();
             my_data = MyData::new();
-        }
-        if debut.elapsed().as_secs() >= 60*60*10 {
-            break;
         }
     }
 }

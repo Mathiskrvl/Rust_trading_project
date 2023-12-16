@@ -1,6 +1,6 @@
 #! [warn(clippy::all, clippy::pedantic)]
 mod get_data;
-//mod test_mnist;
+// mod test_mnist;
 mod utils;
 mod encoder;
 
@@ -69,7 +69,7 @@ fn thread_miner_bitcoin() {
                 let (output, new_state_encoder, new_state_decoder) = model.forward(input.clone(), state_encoder, state_decoder);
                 state_encoder = Some(new_state_encoder);
                 state_decoder = Some(new_state_decoder);
-                let loss = MSELoss::new().forward(output.clone(), input.clone(), Reduction::Auto);
+                let loss: Tensor<Autodiff<Wgpu>, 1> = MSELoss::new().forward(output.clone(), input.clone(), Reduction::Auto);
                 if compteur_iter % 100 == 0 {
                     println!("Train - Iteration {} - Loss {:.5}", compteur_iter, loss.clone().into_scalar());
                 }
@@ -79,6 +79,7 @@ fn thread_miner_bitcoin() {
                 if compteur_iter % 50000 == 0 {
                     count_save +=1;
                     let model_cloned = model.clone();
+                    // let record_optmizer = optim.to_record();
                     thread::spawn(move || {
                         model_cloned.clone()
                             .save_file(format!("model/autoencoder/autoencoder_model_{count_save}"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())

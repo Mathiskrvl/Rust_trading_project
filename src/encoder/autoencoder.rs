@@ -31,11 +31,11 @@ impl AutoencoderConfig {
             decoder: DecoderConfig::new().init()
         }
     }
-    // pub fn init_with<B: Backend>(&self, record: AutoencoderRecord<B>) -> Autoencoder<B> {
-    //     Autoencoder {
-    //         encoder: EncoderConfig::new().init_with(record.encoder),
-    //         decoder: DecoderConfig::new().init_with(record.decoder)
-    //     }
-    // }
+    pub fn init_with<B: Backend>(&self, record: AutoencoderRecord<B>) -> Autoencoder<B> {
+        Autoencoder {
+            encoder: EncoderConfig::new().init_with(record.encoder),
+            decoder: DecoderConfig::new().init_with(record.decoder)
+        }
+    }
 }
 

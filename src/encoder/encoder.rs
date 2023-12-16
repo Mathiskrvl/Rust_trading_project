@@ -68,4 +68,16 @@ impl EncoderConfig {
             norm: LayerNormConfig::new(1024).init(),
         }
     }
+    pub fn init_with<B: Backend>(&self, record: EncoderRecord<B>) -> Encoder<B> {
+        Encoder {
+            conv1: Conv2dConfig::new([1, 16], [1, 2]).init_with(record.conv1),
+            lstm: LstmConfig::new(1024, 1024, true).init_with(record.lstm),
+            prelinear: LinearConfig::new(640, 1024).init_with(record.prelinear),
+            linear1: LinearConfig::new(1024, 2048).init_with(record.linear1),
+            linear2: LinearConfig::new(2048, 2048).init_with(record.linear2),
+            activation: ReLU::new(),
+            dropout: DropoutConfig::new(self.dropout).init(),
+            norm: LayerNormConfig::new(1024).init_with(record.norm),
+        }
+    }
 }

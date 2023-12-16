@@ -68,4 +68,16 @@ impl DecoderConfig {
             norm: LayerNormConfig::new(1024).init(),
         }
     }
+    pub fn init_with<B: Backend>(&self, record: DecoderRecord<B>) -> Decoder<B> {
+        Decoder {
+            prelinear: LinearConfig::new(1024, 640).init_with(record.prelinear),
+            linear2: LinearConfig::new(2048, 2048).init_with(record.linear2),
+            linear1: LinearConfig::new(2048, 1024).init_with(record.linear1),
+            lstm: LstmConfig::new( 1024, 1024, true).init_with(record.lstm),
+            convt1: ConvTranspose2dConfig::new([16, 1], [1, 2]).init_with(record.convt1),
+            activation: ReLU::new(),
+            dropout: DropoutConfig::new(self.dropout).init(),
+            norm: LayerNormConfig::new(1024).init_with(record.norm),
+        }
+    }
 }
