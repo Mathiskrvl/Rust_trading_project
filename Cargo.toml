@@ -2,6 +2,7 @@
 name = "trade"
 version = "0.1.0"
 edition = "2021"
+default-run = "main"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,4 +10,16 @@ edition = "2021"
 burn = { version = "0.11.1", features = ["wgpu", "train", "tch"] }
 serde = "1.0.193"
 serde_json = "1.0"
-tungstenite = { version = "0.20.1", features = ["native-tls"] }
+tungstenite = { version = "0.21.0", features = ["native-tls"] }
+
+[[bin]]
+name = "train-encoder"
+path = "src/train_encoder.rs"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "train-agent"
+path = "src/train_agent.rs"

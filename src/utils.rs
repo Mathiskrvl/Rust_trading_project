@@ -1,14 +1,14 @@
 // mod encoder;
 // mod get_data;
 use crate::get_data::MyData;
-use crate::encoder::autoencoder::{Autoencoder, AutoencoderConfig};
+use crate::encoder::autoencoder::AutoencoderConfig;
 use burn::{
     module::Module,
     config::Config,
     tensor::{
         backend::{AutodiffBackend, Backend},
         Tensor, Data, Distribution},
-    optim::{GradientsParams, GradientsAccumulator, AdamConfig, Optimizer}, 
+    optim::{GradientsParams, AdamConfig, Optimizer}, 
     nn::loss::{MSELoss, Reduction},
     record::CompactRecorder,
 };
@@ -22,34 +22,6 @@ pub fn data_to_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
         .collect();
     //let orderbooks = Tensor::cat(orderbooks, 0);
     orderbooks
-}
-#[allow(dead_code)]
-pub fn grads<B: AutodiffBackend>(
-        mydata: MyData,
-        model: Autoencoder<B>, 
-        state_e: Option<(Tensor<B, 2>, Tensor<B, 2>)>, 
-        state_d: Option<(Tensor<B, 2>, Tensor<B, 2>)>) -> (
-            GradientsParams,
-            Option<(Tensor<B, 2>, Tensor<B, 2>)>,
-            Option<(Tensor<B, 2>, Tensor<B, 2>)>) {
-    let inputs = data_to_tensor::<B>(mydata);
-    let mut grad_accumulator = GradientsAccumulator::new();
-    let mut state_encoder: Option<(Tensor<B, 2>, Tensor<B, 2>)> = state_e;
-    let mut state_decoder: Option<(Tensor<B, 2>, Tensor<B, 2>)> = state_d;
-    for input in inputs.iter() {
-
-        // let test = Tensor::<B, 4>::random( [1, 2, 20, 2], Distribution::Uniform(0., 5e1));
-
-        let (output, new_state_encoder, new_state_decoder) = model.forward(input.clone(), state_encoder, state_decoder);
-        state_encoder = Some(new_state_encoder);
-        state_decoder = Some(new_state_decoder);
-        let loss = MSELoss::new().forward(output.clone(), input.clone(), Reduction::Auto);
-        println!("Loss {:.3}", loss.clone().into_scalar());
-        let grads = loss.backward();
-        let grads = GradientsParams::from_grads(grads, &model);
-        grad_accumulator.accumulate(&model, grads);
-    }
-    (grad_accumulator.grads(), state_encoder, state_decoder)
 }
 
 #[derive(Config)]
