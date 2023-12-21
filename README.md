@@ -23,3 +23,4 @@ Burn framework : https://burn.dev/
 https://www.youtube.com/watch?v=tZTQ6S9PfkE
 https://www.youtube.com/watch?v=ioidsRlf79o&t=929s
 https://github.com/quantumiracle/Popular-RL-Algorithms/blob/master/sac.py#L326
+https://github.com/quantumiracle/Popular-RL-Algorithms/blob/master/ppo_gae_continuous2.py
