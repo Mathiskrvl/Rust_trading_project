@@ -16,12 +16,12 @@ use burn::{
     tensor::{Tensor, backend::Backend},
     backend::{Wgpu, Autodiff,wgpu::{AutoGraphicsApi, WgpuDevice}},
     nn::loss::{MSELoss, Reduction},
-    record::{PrettyJsonFileRecorder, HalfPrecisionSettings},
+    record::{PrettyJsonFileRecorder, HalfPrecisionSettings, Recorder},
 };
 
 fn main() {
-    thread_miner_bitcoin();
-    // training();
+    // thread_miner_bitcoin();
+    training();
 }
 
 #[derive(Config)]
@@ -76,11 +76,13 @@ fn thread_miner_bitcoin() {
                 let grads = loss.backward();
                 let grads = GradientsParams::from_grads(grads, &model);
                 model = optim.step(config.lr, model, grads);
-                if compteur_iter % 50000 == 0 {
+                if compteur_iter % 5000 == 0 {
                     count_save +=1;
                     let model_cloned = model.clone();
-                    // Sauvegarde de l'état de l'optimiseur.
+                    let record = optim.to_record();
                     thread::spawn(move || {
+                        let recorder = &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new();
+                        let _ = recorder.record(record, "model/autoencoder/optimizeur".into());
                         model_cloned.clone()
                             .save_file(format!("model/autoencoder/autoencoder_model_{count_save}"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
                             .expect("Trained model should be saved successfully");
@@ -103,5 +105,5 @@ type MyAutodiffBackend = Autodiff<MyBackend>;
 
 pub fn training() {
     let device = WgpuDevice::default();
-    run::<MyAutodiffBackend>("./model", device);
+    run::<MyAutodiffBackend>(device);
 }

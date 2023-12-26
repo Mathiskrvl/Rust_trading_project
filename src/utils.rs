@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 // mod encoder;
 // mod get_data;
 use crate::get_data::MyData;
@@ -10,7 +12,6 @@ use burn::{
         Tensor, Data, Distribution},
     optim::{GradientsParams, AdamConfig, Optimizer}, 
     nn::loss::{MSELoss, Reduction},
-    record::CompactRecorder,
 };
 
 pub fn data_to_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
@@ -26,7 +27,7 @@ pub fn data_to_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
 
 #[derive(Config)]
 pub struct AutoencoderTrainingConfig {
-    #[config(default = 100)]
+    #[config(default = 5)]
     pub num_epochs: usize,
     #[config(default = 40)]
     pub seed: u64,
@@ -36,16 +37,16 @@ pub struct AutoencoderTrainingConfig {
     pub optimizer: AdamConfig,
 }
 
-pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
+pub fn run<B: AutodiffBackend>(device: B::Device) {
     // Create the configuration.
     let config_model = AutoencoderConfig::new();
     let config_optimizer = AdamConfig::new();
     let config = AutoencoderTrainingConfig::new(config_model, config_optimizer);
 
-    std::fs::create_dir(artifact_dir).ok();
-    std::fs::create_dir(format!("{artifact_dir}/autoencoder_model")).ok();
-    std::fs::create_dir(format!("{artifact_dir}/encoder_model")).ok();
-    config.save(format!("{artifact_dir}/autoencoder_model/config.json")).expect("Config should be saved successfully");
+    // std::fs::create_dir(artifact_dir).ok();
+    // std::fs::create_dir(format!("{artifact_dir}/autoencoder_model")).ok();
+    // std::fs::create_dir(format!("{artifact_dir}/encoder_model")).ok();
+    // config.save(format!("{artifact_dir}/autoencoder_model/config.json")).expect("Config should be saved successfully");
 
     B::seed(config.seed);
 
@@ -54,9 +55,10 @@ pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
     let mut state_encoder: Option<(Tensor<B, 2>, Tensor<B, 2>)> = None;
     let mut state_decoder: Option<(Tensor<B, 2>, Tensor<B, 2>)> = None;
 
+    let time = Instant::now();
     for epoch in 1..config.num_epochs + 1 {
         for iteration in 0..1000 {
-            let inputs = Tensor::<B, 4>::random( [1, 2, 20, 2], Distribution::Uniform(0., 5e2));
+            let inputs = Tensor::<B, 4>::random( [1, 1, 40, 2], Distribution::Uniform(0., 50.));
             let (output, new_state_encoder, new_state_decoder) = model.forward(inputs.clone(), state_encoder, state_decoder);
             state_encoder = Some(new_state_encoder);
             state_decoder = Some(new_state_decoder);
@@ -66,7 +68,6 @@ pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
             let grads = GradientsParams::from_grads(grads, &model);
             model = optim.step(config.lr, model, grads);
         }
-        
         // let model_valid = model.valid();
         // let inputs = Tensor::<B::InnerBackend, 4>::ones([1,2,20,2]);
         // let output = model_valid.forward(inputs.clone(), state_encoder.clone(), state_decoder.clone());
@@ -75,7 +76,8 @@ pub fn run<B: AutodiffBackend>(artifact_dir: &str, device: B::Device) {
         // println!(
         //     "[Valid - Epoch {} - Loss {}", epoch, loss.clone().into_scalar());
     };
-    model.clone().save_file(format!("{artifact_dir}/autoencoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
-    model.encoder.clone().save_file(format!("{artifact_dir}/encoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
+    println!("{}", time.elapsed().as_secs());
+    // model.clone().save_file(format!("{artifact_dir}/autoencoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
+    // model.encoder.clone().save_file(format!("{artifact_dir}/encoder_model"), &CompactRecorder::new()).expect("Trained model should be saved successfully");
 }
 
