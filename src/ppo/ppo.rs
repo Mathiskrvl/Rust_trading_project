@@ -47,8 +47,8 @@ struct PPOAgent<B: Backend> {
 
 impl<B: Backend> PPOAgent<B> {
     pub fn init(action_range: f32) -> Self {
-        let actor = ActorConfig::new(128).init();
-        let critic = CriticConfig::new(128).init();
+        let actor = ActorConfig::new(2048).init();
+        let critic = CriticConfig::new(2048).init();
         Self {
             actor,
             critic,
@@ -68,11 +68,22 @@ impl<B: Backend> PPOAgent<B> {
             clip(pi.sample(),-self.action_range, self.action_range)
         }
     }
+    pub fn save_agent() {
+        todo!()
+    }
+    pub fn load_agent() {
+        todo!()
+    }
 }
 
 struct LearnerPPOAgent<B: AutodiffBackend, OA: Optimizer<Actor<B>, B>, OC: Optimizer<Critic<B>,B>> {
     agent: PPOAgent<B>,
-    optimizer: (OA, OC),
+    optim_a: OA,
+    optim_c: OC,
+    // state_buffer: Tensor<B, 2>
+    // action_buffer: Tensor<B, 1>
+    // reward_buffer: Tensor<B, 1>
+    // reward_cumulatif_buffer: Tensor<B, 1>
 }
 
 impl<B, OA, OC> LearnerPPOAgent<B, OA, OC> 
@@ -81,14 +92,15 @@ where
     OA: Optimizer<Actor<B>, B>,
     OC: Optimizer<Critic<B>,B>,
 {
-    fn new(optimizer: (OA, OC), action_range: f32) -> Self {
-        let agent = PPOAgent::init(action_range);
+    fn new(agent: PPOAgent<B>, optim_a: OA, optim_c: OC,) -> Self {
+        //let agent = PPOAgent::init(action_range);
         Self {
             agent,
-            optimizer
+            optim_a,
+            optim_c,
         }
     }
-    
+
     fn actor_train() {
         todo!()
     }
