@@ -2,7 +2,7 @@ use burn::backend::wgpu::tensor;
 use burn::module::AutodiffModule;
 use burn::optim::{Adam, Optimizer};
 use burn::tensor::ops::TensorOps;
-use burn::tensor::{Tensor, ElementConversion, Data};
+use burn::tensor::{Tensor, ElementConversion, Data, Shape, Float, Numeric};
 use burn::tensor::Int;
 use burn::tensor::Distribution;
 use burn::{tensor::backend::{Backend, AutodiffBackend},
@@ -80,13 +80,15 @@ struct LearnerPPOAgent<B: AutodiffBackend, OA: Optimizer<Actor<B>, B>, OC: Optim
     agent: PPOAgent<B>,
     optim_a: OA,
     optim_c: OC,
-    state_buffer: Vec<Tensor<B, 1>>,
+    state_buffer: Vec<Tensor<B, 2>>,
     action_buffer: Vec<f32>,
     reward_buffer: Vec<f32>,
     reward_cumulatif_buffer: Vec<f32>,
     gamma: f32,
     epsilon: f32,
     lr: f64,
+    actor_update_step: usize,
+    critic_update_step: usize,
 }
 
 impl<B, OA, OC> LearnerPPOAgent<B, OA, OC> 
@@ -95,7 +97,7 @@ where
     OA: Optimizer<Actor<B>, B>,
     OC: Optimizer<Critic<B>,B>,
 {
-    pub fn new(agent: PPOAgent<B>, optim_a: OA, optim_c: OC, gamma: f32, epsilon: f32, lr: f64) -> Self {
+    pub fn new(agent: PPOAgent<B>, optim_a: OA, optim_c: OC, gamma: f32, epsilon: f32, lr: f64, actor_update_step: usize, critic_update_step: usize) -> Self {
         //let agent = PPOAgent::init(action_range);
         Self {
             agent,
@@ -108,6 +110,8 @@ where
             gamma,
             epsilon,
             lr,
+            actor_update_step,
+            critic_update_step
         }
     }
     fn actor_train(&mut self, state: Tensor<B,2>, action: Tensor<B, 2>, adv: Tensor<B, 2>, old_pi: (Tensor<B, 2>, Tensor<B,2>)) {
@@ -126,20 +130,38 @@ where
         let grads = GradientsParams::from_grads(grads, &self.agent.critic);
         self.agent.actor = self.optim_a.step(self.lr, self.agent.actor.clone(), grads);
     }
-    fn critic_train(&mut self, cumulatif_r: Tensor<B, 1>, state: Tensor<B, 2>) {
-        let advantage = cumulatif_r.sub(self.agent.critic.forward(state).squeeze(0));
+    fn critic_train(&mut self, cumulatif_r: Tensor<B, 2>, state: Tensor<B, 2>) {
+        let advantage = cumulatif_r.sub(self.agent.critic.forward(state));
         let c_loss = advantage.powf(2f32).mean();
         let grads = c_loss.backward();
         let grads = GradientsParams::from_grads(grads, &self.agent.critic);
         self.agent.critic = self.optim_c.step(self.lr, self.agent.critic.clone(), grads);
     }
-    pub fn update(&self) {
-        todo!()
+    pub fn update(&mut self) {
+        let s = Tensor::cat(self.state_buffer.clone(), 0);
+        let a = Tensor::<B, 1>::from_data(Data::new(self.action_buffer.clone(), Shape::new([self.action_buffer.len(); 1])).convert());
+        let r = Tensor::<B, 1>::from_data(Data::new(self.reward_cumulatif_buffer.clone(), Shape::new([self.reward_buffer.len(); 1])).convert());
+        let (a, r) = (a.unsqueeze_dim(1), r.unsqueeze_dim(1));
+        let (mean, std) = self.agent.actor.forward(s.clone(), self.agent.action_range);
+        let (mean, std) = (mean.detach(), std.detach());
+        let adv = r.clone().sub(self.agent.critic.forward(s.clone())).detach();
+        // update actor
+        for _ in 0..self.actor_update_step {
+            self.actor_train(s.clone(), a.clone(), adv.clone(), (mean.clone(), std.clone()));
+        }
+        // update critic
+        for _ in 0..self.critic_update_step {
+            self.critic_train(r.clone(), s.clone());
+        }
+        self.state_buffer.clear();
+        self.action_buffer.clear();
+        self.reward_cumulatif_buffer.clear();
+        self.reward_buffer.clear();
     }
     pub fn store_transition(&mut self, state: Tensor<B, 2>, action: f32, reward: f32) {
         self.action_buffer.push(action);
         self.reward_buffer.push(reward);
-        self.state_buffer.push(state.squeeze::<1>(0));
+        self.state_buffer.push(state);
     }
     fn calculate_cumulative_reward(&mut self, next_state: Tensor<B, 2>, done: bool) {
         let mut v_s_: f32;
