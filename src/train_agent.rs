@@ -1,16 +1,16 @@
-mod ppo;
+mod ppo_agent;
 mod encoder;
 mod utils;
 mod get_data;
 mod run_encoder;
 use run_encoder::run;
-use ppo::ppo::{PPOAgent, LearnerPPOAgent};
+use ppo_agent::ppo::{PPOAgent, LearnerPPOAgent};
 use get_data::get_data;
 use std::sync::mpsc;
 use std::thread;
 use burn::{backend::{Wgpu, Autodiff,wgpu::{AutoGraphicsApi, WgpuDevice}}, optim::{AdamConfig, Optimizer}};
 
-use crate::ppo::{actor::Actor, critic::Critic};
+use crate::ppo_agent::{actor::Actor, critic::Critic};
 pub fn main() {
     todo!()
 }
