@@ -1,30 +1,12 @@
-use burn::backend::wgpu::tensor;
-use burn::module::AutodiffModule;
-use burn::optim::{Adam, Optimizer};
-use burn::tensor::ops::TensorOps;
-use burn::tensor::{Tensor, ElementConversion, Data, Shape, Float, Numeric};
-use burn::tensor::Int;
-use burn::tensor::Distribution;
-use burn::{tensor::backend::{Backend, AutodiffBackend},
-        config::Config,
-        optim::AdamConfig};
-use burn::optim::GradientsParams;
-
-use super::critic::{CriticConfig, Critic, self};
-use super::actor::{ActorConfig, Actor, self};
-
-
-// #[derive(Config)]
-// struct PPOAgentConfig {
-//     actor: ActorConfig,
-//     critic: CriticConfig,
-//     optimizer_a: AdamConfig,
-//     optimizer_b: AdamConfig,
-//     #[config(default = 1e-4)]
-//     lr_a: f64,
-//     #[config(default = 2e-4)]
-//     lr_c: f64,
-// }
+use burn::{
+    optim::{Optimizer, GradientsParams},
+    tensor::{
+        {Tensor, ElementConversion, Data, Shape,Int, Distribution},
+        backend::{Backend, AutodiffBackend}
+    }
+};
+use super::critic::{CriticConfig, Critic};
+use super::actor::{ActorConfig, Actor};
 fn clip<T>(value: T, min: T, max: T) -> T
 where
     T: PartialOrd,
@@ -38,7 +20,7 @@ where
     }
 }
 
-struct PPOAgent<B: Backend> {
+pub struct PPOAgent<B: Backend> {
     actor: Actor<B>,
     critic: Critic<B>,
     action_range: f32,
@@ -76,7 +58,7 @@ impl<B: Backend> PPOAgent<B> {
     }
 }
 
-struct LearnerPPOAgent<B: AutodiffBackend, OA: Optimizer<Actor<B>, B>, OC: Optimizer<Critic<B>,B>> {
+pub struct LearnerPPOAgent<B: AutodiffBackend, OA: Optimizer<Actor<B>, B>, OC: Optimizer<Critic<B>,B>> {
     agent: PPOAgent<B>,
     optim_a: OA,
     optim_c: OC,
@@ -183,3 +165,4 @@ where
     }
 
 }
+

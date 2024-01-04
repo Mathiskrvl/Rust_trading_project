@@ -1,7 +1,4 @@
 use std::time::Instant;
-
-// mod encoder;
-// mod get_data;
 use crate::get_data::MyData;
 use crate::encoder::autoencoder::AutoencoderConfig;
 use burn::{
@@ -37,7 +34,7 @@ pub struct AutoencoderTrainingConfig {
     pub optimizer: AdamConfig,
 }
 
-pub fn run<B: AutodiffBackend>(device: B::Device) {
+pub fn test<B: AutodiffBackend>(device: B::Device) {
     // Create the configuration.
     let config_model = AutoencoderConfig::new();
     let config_optimizer = AdamConfig::new();
