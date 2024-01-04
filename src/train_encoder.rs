@@ -34,7 +34,6 @@ pub struct AutoencoderTrainingConfig {
     pub optimizer: AdamConfig,
 }
 
-#[allow(dead_code)]
 fn train_encoder() {
     let (tx, rx) = mpsc::channel();
     let miner_btc = thread::spawn(move || {
@@ -54,7 +53,7 @@ fn train_encoder() {
         MyAutodiffBackend::seed(config.seed);
         println!("model create");
 
-        // add logic for init_with "model/autoencoder/autoencoder_model_{last_default}.json"
+        // todo add logic for init_with "model/autoencoder/autoencoder_model_{last_default}.json"
 
         let mut model= config.model.init().to_device(&device);
         let mut optim = config.optimizer.init();
@@ -102,7 +101,7 @@ fn train_encoder() {
 
 type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
 type MyAutodiffBackend = Autodiff<MyBackend>;
-
+#[allow(dead_code)]
 pub fn testing() {
     let device = WgpuDevice::default();
     test::<MyAutodiffBackend>(device);

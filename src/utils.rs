@@ -34,6 +34,7 @@ pub struct AutoencoderTrainingConfig {
     pub optimizer: AdamConfig,
 }
 
+#[allow(dead_code)]
 pub fn test<B: AutodiffBackend>(device: B::Device) {
     // Create the configuration.
     let config_model = AutoencoderConfig::new();

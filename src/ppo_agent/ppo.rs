@@ -1,11 +1,13 @@
 use burn::{
+    module::Module,
     optim::{Optimizer, GradientsParams},
     tensor::{
         {Tensor, ElementConversion, Data, Shape,Int, Distribution},
-        backend::{Backend, AutodiffBackend}
-    }
+        backend::{Backend, AutodiffBackend},
+    },
+    record::{PrettyJsonFileRecorder, HalfPrecisionSettings},
 };
-use super::critic::{CriticConfig, Critic};
+use super::critic::{CriticConfig, Critic, self};
 use super::actor::{ActorConfig, Actor};
 fn clip<T>(value: T, min: T, max: T) -> T
 where
@@ -50,8 +52,16 @@ impl<B: Backend> PPOAgent<B> {
             clip(pi.sample(),-self.action_range, self.action_range)
         }
     }
-    pub fn save_agent() {
-        todo!()
+    pub fn save_agent(&self, dir_path: &str, filename: &str) {
+        std::fs::create_dir(format!("{filename}")).ok();
+        self.actor
+            .clone()
+            .save_file(format!("{dir_path}/{filename}/actor"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
+            .expect("Trained model should be saved successfully");
+        self.critic
+            .clone()
+            .save_file(format!("{dir_path}/{filename}/critic"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
+            .expect("Trained model should be saved successfully");
     }
     pub fn load_agent() {
         todo!()
@@ -96,6 +106,9 @@ where
             critic_update_step
         }
     }
+    pub fn choose_action(&self, state: Tensor<B, 2>, greedy: bool) -> f32 {
+        self.agent.choose_action(state, greedy)
+    }
     fn actor_train(&mut self, state: Tensor<B,2>, action: Tensor<B, 2>, adv: Tensor<B, 2>, old_pi: (Tensor<B, 2>, Tensor<B,2>)) {
         let (mu, sigma) = self.agent.actor.forward(state, self.agent.action_range);
         let (old_mu, old_sigma) = old_pi;
@@ -120,6 +133,7 @@ where
         self.agent.critic = self.optim_c.step(self.lr, self.agent.critic.clone(), grads);
     }
     pub fn update(&mut self) {
+        self.calculate_cumulative_reward();
         let s = Tensor::cat(self.state_buffer.clone(), 0);
         let a = Tensor::<B, 1>::from_data(Data::new(self.action_buffer.clone(), Shape::new([self.action_buffer.len(); 1])).convert());
         let r = Tensor::<B, 1>::from_data(Data::new(self.reward_cumulatif_buffer.clone(), Shape::new([self.reward_buffer.len(); 1])).convert());
@@ -145,15 +159,15 @@ where
         self.reward_buffer.push(reward);
         self.state_buffer.push(state);
     }
-    fn calculate_cumulative_reward(&mut self, next_state: Tensor<B, 2>, done: bool) {
-        let mut v_s_: f32;
-        if done {
-            v_s_ = 0f32;
-        }
-        else {
-            let critics = self.agent.critic.forward(next_state).squeeze::<1>(0);
-            v_s_ = critics.detach().select(0, Tensor::<B, 1, Int>::from_data(Data::zeros([0]))).into_scalar().elem::<f32>()
-        }
+    fn calculate_cumulative_reward(&mut self) {
+        let mut v_s_= 0f32;
+        // if done {
+        //     v_s_ = 0f32;
+        // }
+        // else {
+        //     let critics = self.agent.critic.forward(next_state).squeeze::<1>(0);
+        //     v_s_ = critics.detach().select(0, Tensor::<B, 1, Int>::from_data(Data::zeros([0]))).into_scalar().elem::<f32>()
+        // }
         let mut discounted_r = vec![];
         for r in self.reward_buffer.iter().rev() {
             v_s_ = r + self.gamma * v_s_;
@@ -162,6 +176,9 @@ where
         discounted_r.reverse();
         self.reward_cumulatif_buffer.extend(discounted_r);
         self.reward_buffer.clear();
+    }
+    pub fn record_agent(&self, dir_path: &str, filename: &str) {
+        self.agent.save_agent(dir_path, filename);
     }
 
 }
