@@ -17,6 +17,7 @@ use burn::{
         record::{PrettyJsonFileRecorder, HalfPrecisionSettings, Recorder}};
 use std::io;
 use crate::ppo_agent::{actor::Actor, critic::Critic};
+
 fn main() {
     // println!("Entrez le type du d'agent souhaitez (disponible seulement PPO) : ");
     // let mut init_agent_type = String::new();

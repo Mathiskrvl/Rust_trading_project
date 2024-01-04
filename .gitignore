@@ -1,5 +1,5 @@
 /target
-actor-critic
 test_mnist.rs
 model*
+agent*
 encoder_test
