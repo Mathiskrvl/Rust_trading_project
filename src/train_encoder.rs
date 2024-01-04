@@ -3,38 +3,39 @@ mod get_data;
 mod utils;
 mod encoder;
 
-use std::thread;
-use std::sync::mpsc;
+use std::{thread, io, sync::mpsc};
 use get_data::get_data;
 use encoder::autoencoder::AutoencoderConfig;
 use utils::{test, data_to_tensor};
 
 use burn::{
     module::Module,
-    config::Config,
     optim::{AdamConfig, Optimizer, GradientsParams},
-    tensor::{Tensor, backend::Backend},
+    tensor::Tensor,
     backend::{Wgpu, Autodiff,wgpu::{AutoGraphicsApi, WgpuDevice}},
     nn::loss::{MSELoss, Reduction},
     record::{PrettyJsonFileRecorder, HalfPrecisionSettings, Recorder},
 };
 
 fn main() {
-    train_encoder();
+    println!("Entrez le learning rate :");
+    let mut lr_input = String::new();
+    io::stdin().read_line(&mut lr_input).expect("Échec de la lecture de l'entrée");
+    let lr: f64 = lr_input.trim().parse().expect("Veuillez entrer un nombre valide");
+    println!("Entrez init_model (laissez vide si non applicable):");
+    let mut init_model_input = String::new();
+    io::stdin().read_line(&mut init_model_input).expect("Échec de la lecture de l'entrée");
+    let init_model: Option<String> = if init_model_input.trim().is_empty() {
+        None
+    } else {
+        Some(init_model_input.trim().to_string())
+    };
+
+    train_encoder(lr, init_model);
     // testing();
 }
 
-#[derive(Config)]
-pub struct AutoencoderTrainingConfig {
-    #[config(default = 42)]
-    pub seed: u64,
-    #[config(default = 1e-4)]
-    pub lr: f64,
-    pub model: AutoencoderConfig,
-    pub optimizer: AdamConfig,
-}
-
-fn train_encoder() {
+fn train_encoder(lr: f64, init_model: Option<String>) {
     let (tx, rx) = mpsc::channel();
     let miner_btc = thread::spawn(move || {
         get_data(tx, "btcusdt");
@@ -43,20 +44,28 @@ fn train_encoder() {
         type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
         type MyAutodiffBackend = Autodiff<MyBackend>;
         let device = WgpuDevice::default();
-        let config_model = AutoencoderConfig::new();
-        let config_optimizer = AdamConfig::new();
-        let config = AutoencoderTrainingConfig::new(config_model, config_optimizer);
         std::fs::create_dir("model").ok();
-        std::fs::create_dir("model/autoencoder").ok();
-        std::fs::create_dir("model/encoder").ok();
-        config.save("model/autoencoder/config.json").expect("Config should be saved successfully");
-        MyAutodiffBackend::seed(config.seed);
-        println!("model create");
 
-        // todo add logic for init_with "model/autoencoder/autoencoder_model_{last_default}.json"
+        let mut model;
+        let mut optim;
 
-        let mut model= config.model.init().to_device(&device);
-        let mut optim = config.optimizer.init();
+        if let Some(num_safe) = init_model {
+            let record_model = PrettyJsonFileRecorder::<HalfPrecisionSettings>::new()
+                .load(format!("model/encoder_record_{num_safe}/autoencoder").into())
+                .expect("Trained model should exist");
+            model = AutoencoderConfig::new().init_with::<MyAutodiffBackend>(record_model).to_device(&device);
+            let record_optimizer =  PrettyJsonFileRecorder::<HalfPrecisionSettings>::new()
+                .load(format!("model/encoder_record_{num_safe}/optimizeur").into())
+                .expect("Trained model should exist");
+            optim = AdamConfig::new().init().load_record(record_optimizer);
+            println!("Model load")
+        }
+        else {
+            model = AutoencoderConfig::new().init().to_device(&device);
+            optim = AdamConfig::new().init();
+            println!("Model create")
+        }
+        
         let mut state_encoder: Option<(Tensor<MyAutodiffBackend, 2>, Tensor<MyAutodiffBackend, 2>)> = None;
         let mut state_decoder: Option<(Tensor<MyAutodiffBackend, 2>, Tensor<MyAutodiffBackend, 2>)> = None;
         let mut compteur_iter = 0;
@@ -70,26 +79,25 @@ fn train_encoder() {
                 state_decoder = Some(new_state_decoder);
                 let loss: Tensor<Autodiff<Wgpu>, 1> = MSELoss::new().forward(output.clone(), input.clone(), Reduction::Auto);
                 if compteur_iter % 100 == 0 {
-                    println!("Train - Iteration {} - Loss {:.5}", compteur_iter, loss.clone().into_scalar());
+                    println!("Train - Iteration {} - Loss {:.5}", compteur_iter + count_save * 5000, loss.clone().into_scalar());
                 }
                 let grads = loss.backward();
                 let grads = GradientsParams::from_grads(grads, &model);
-                model = optim.step(config.lr, model, grads);
+                model = optim.step(lr, model, grads);
                 if compteur_iter % 5000 == 0 {
-                    count_save +=1;
-                    let model_cloned = model.clone();
+                    compteur_iter = 0;
+                    count_save += 1;
                     let record = optim.to_record();
-                    thread::spawn(move || {
-                        let recorder = &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new();
-                        let _ = recorder.record(record, "model/autoencoder/optimizeur".into());
-                        model_cloned.clone()
-                            .save_file(format!("model/autoencoder/autoencoder_model_{count_save}"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
-                            .expect("Trained model should be saved successfully");
-                        model_cloned.encoder
-                            .save_file(format!("model/encoder/encoder_model_{count_save}"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
-                            .expect("Trained model should be saved successfully");
-                        println!("------------------- Model saved -------------------");
-                    });
+                    std::fs::create_dir(format!("model/encoder_record_{count_save}")).ok();
+                    let recorder = &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new();
+                    let _ = recorder.record(record, format!("model/encoder_record_{count_save}/optimizeur").into());
+                    model.clone()
+                        .save_file(format!("model/encoder_record_{count_save}/autoencoder"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
+                        .expect("Trained model should be saved successfully");
+                    model.clone().encoder
+                        .save_file(format!("model/encoder_record_{count_save}/encoder"), &PrettyJsonFileRecorder::<HalfPrecisionSettings>::new())
+                        .expect("Trained model should be saved successfully");
+                    println!("------------------- Model saved -------------------");
                 }
             }
         }
