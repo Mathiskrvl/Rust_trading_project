@@ -6,7 +6,7 @@ mod encoder;
 use std::{thread, io, sync::mpsc};
 use get_data::get_data;
 use encoder::autoencoder::AutoencoderConfig;
-use utils::{test, data_to_tensor};
+use utils::{test_encoder, data_to_tensor};
 
 use burn::{
     module::Module,
@@ -107,10 +107,11 @@ fn train_encoder(lr: f64, init_model: Option<String>) {
     train_encoder.join().unwrap();
 }
 
-type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
-type MyAutodiffBackend = Autodiff<MyBackend>;
+
 #[allow(dead_code)]
 pub fn testing() {
+    type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
+    type MyAutodiffBackend = Autodiff<MyBackend>;
     let device = WgpuDevice::default();
-    test::<MyAutodiffBackend>(device);
+    test_encoder::<MyAutodiffBackend>(device);
 }

@@ -3,8 +3,8 @@ mod encoder;
 mod utils;
 mod get_data;
 mod run_encoder;
-mod reward;
-use reward::reward;
+
+use utils::reward;
 use run_encoder::run_encoder;
 use ppo_agent::ppo::{PPOAgent, LearnerPPOAgent};
 use get_data::get_data;
