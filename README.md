@@ -16,10 +16,10 @@ C'est un avantage certain par rapport au autre framework de deep learning classi
 
 
 Crédit:
-multi-agent paper: https://arxiv.org/pdf/1706.02275.pdf \n
-SAC paper : https://arxiv.org/pdf/1801.01290.pdf \n
-PPO paper : https://arxiv.org/pdf/1707.06347.pdf \n
-Burn framework : https://burn.dev/ \n
+multi-agent paper: https://arxiv.org/pdf/1706.02275.pdf
+SAC paper : https://arxiv.org/pdf/1801.01290.pdf
+PPO paper : https://arxiv.org/pdf/1707.06347.pdf
+Burn framework : https://burn.dev/
 
 
 https://www.youtube.com/watch?v=tZTQ6S9PfkE
