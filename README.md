@@ -25,8 +25,12 @@ Le processus actuel du code est le suivant :
 2. On les fait passer dans un encodeur qui intègre des dépendances temporelles.
 3. On envoie les données de sortie de l'encodeur qui va être l'environnement de notre agent qui va prendre des actions (acheter, vendre, attendre).
 
+L'agent utilisé actuellement est l'algo PPO (Policy Gradient Optimization) un des meilleurs algo On-policy découvert à ce jour.
+
 ## Entraînement dans le Cloud
 Pour l'entraînement dans le cloud, le meilleur rapport qualité/prix est AWS G4ad. Si en Spot, mettre souvent des records du modèle dans les S3.
+
+Mais actuellement ayant des capacité assez limité une instance sans gpu pourrais fonctionner
 
 ## Framework Burn
 Le framework Burn ici utilisé permet d'entraîner nos agents avec n'importe quelle API de GPU (OpenGL, DirectX, Vulkan) grâce à l'utilisation de wgpu qui rend cela possible.
@@ -45,3 +49,7 @@ https://www.youtube.com/watch?v=tZTQ6S9PfkE
 https://www.youtube.com/watch?v=ioidsRlf79o&t=929s
 https://github.com/quantumiracle/Popular-RL-Algorithms/blob/master/sac.py#L326
 https://github.com/quantumiracle/Popular-RL-Algorithms/blob/master/ppo_continuous2.py
+
+## Licence
+Ce code appartient entièrement à Mathis Keraval et Idir Guettab
+Il est interdit de le rendre publique
