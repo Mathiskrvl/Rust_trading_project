@@ -9,10 +9,7 @@ use run_encoder::run_encoder;
 use ppo_agent::ppo::PPOAgent;
 use get_data::get_data;
 use std::{thread, io, sync::mpsc};
-use burn::{
-    backend::{Wgpu, wgpu::AutoGraphicsApi},
-    tensor::Tensor,
-};
+use burn::backend::{Wgpu, wgpu::AutoGraphicsApi};
 fn main() {
     let agent_type: String = String::from("ppo");
 
