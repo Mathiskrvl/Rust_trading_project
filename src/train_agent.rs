@@ -8,14 +8,13 @@ use utils::PorteFeuille;
 use run_encoder::run_encoder;
 use ppo_agent::ppo::{PPOAgent, LearnerPPOAgent};
 use get_data::get_data;
-use std::{sync::mpsc, str::FromStr};
-use std::thread;
+use std::{thread, io, sync::mpsc};
+
 use burn::{
         backend::{Wgpu, Autodiff,wgpu::AutoGraphicsApi}, 
         optim::{AdamConfig, Optimizer},
         tensor::Tensor,
         record::{PrettyJsonFileRecorder, HalfPrecisionSettings, Recorder}};
-use std::io;
 use crate::ppo_agent::{actor::Actor, critic::Critic};
 
 fn main() {
@@ -23,7 +22,7 @@ fn main() {
     // let mut init_agent_type = String::new();
     // io::stdin().read_line(&mut init_agent_type).expect("Échec de la lecture de l'entrée");
     // let agent_type: String = init_agent_type.trim().parse().expect("Veuillez entrer un nombre valide");
-    let agent_type: String = String::from_str("ppo").unwrap();
+    let agent_type: String = String::from("ppo");
 
     println!("Entrez init_agent (laissez vide si non applicable): ");
     let mut init_agent_input = String::new();
@@ -75,13 +74,13 @@ fn train_agent(agent_type: String, init_agent: Option<String>, init_encoder: Str
                 .expect("Trained model should exist");
             optim_actor = AdamConfig::new().init().load_record(record_optimizer_actor);
             optim_critic = AdamConfig::new().init().load_record(record_optimizer_critic);
-            println!("-------------- Agent load --------------")
+            println!("-------------- Agent load --------------");
         }
         else {
             agent = PPOAgent::<MyAutodiffBackend>::init(action_range);
             optim_actor = AdamConfig::new().init::<MyAutodiffBackend, Actor<MyAutodiffBackend>>();
             optim_critic = AdamConfig::new().init::<MyAutodiffBackend, Critic<MyAutodiffBackend>>();
-            println!("-------------- Agent create --------------")
+            println!("-------------- Agent create --------------");
         }
         let mut learner = LearnerPPOAgent::new(agent, optim_actor, optim_critic, gamma, epsilon, lr_a, lr_c, actor_update_step, critic_update_step);
         let (mut compteur_iter, mut compteur_update, mut compteur_record) = (0, 0, 0);

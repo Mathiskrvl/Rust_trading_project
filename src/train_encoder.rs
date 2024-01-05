@@ -6,7 +6,7 @@ mod encoder;
 use std::{thread, io, sync::mpsc};
 use get_data::get_data;
 use encoder::autoencoder::AutoencoderConfig;
-use utils::{test_encoder, data_to_tensor};
+use utils::{test_encoder, data_to_vec_tensor};
 
 use burn::{
     module::Module,
@@ -71,7 +71,7 @@ fn train_encoder(lr: f64, init_model: Option<String>) {
         let mut compteur_iter = 0;
         let mut count_save = 0;
         for recu in rx {
-            let inputs = data_to_tensor::<MyAutodiffBackend>(recu);
+            let inputs = data_to_vec_tensor::<MyAutodiffBackend>(recu);
             for input in inputs {
                 compteur_iter += 1;
                 let (output, new_state_encoder, new_state_decoder) = model.forward(input.clone(), state_encoder, state_decoder);

@@ -12,14 +12,18 @@ use burn::{
     nn::loss::{MSELoss, Reduction},
 };
 
-pub fn data_to_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
+pub fn data_to_tensor<B: Backend>(data: MyData) -> Tensor<B, 4> {
+    let orderbook = Tensor::<B, 2>::from_data(Data::<f32, 2>::from(data.orderbook.last().unwrap().clone()).convert()).unsqueeze::<4>();
+    orderbook
+}
+
+pub fn data_to_vec_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
     let orderbooks = data.orderbook
         .iter()
         .map(|orderbook: &[[f32; 2]; 40]| Data::<f32, 2>::from(orderbook.clone()))
         .map(|data| Tensor::<B, 2>::from_data(data.convert()))
         .map(|tensor| tensor.unsqueeze::<4>())
         .collect();
-    //let orderbooks = Tensor::cat(orderbooks, 0);
     orderbooks
 }
 
@@ -57,18 +61,18 @@ impl PorteFeuille {
         let price = self.get_btc_price();
         self.btc * price + self.usdt
     }
-    pub fn trade(&mut self, quantity: f64, epsilon: f64) {
-        if (quantity >= 0f64 + epsilon) || (quantity <= 0f64 - epsilon)  {
+    pub fn trade(&mut self, quantity: f64, phi: f64) {
+        if (quantity >= 0f64 + phi) || (quantity <= 0f64 - phi)  {
             let price = self.get_btc_price();
             if quantity > 0f64 {
                 let quantity_usdt = self.usdt * (quantity / 100f64);
-                self.btc +=  quantity_usdt / quantity;
+                self.btc +=  quantity_usdt / price;
                 self.usdt -= quantity_usdt;
                 println!("We buy {quantity_usdt} of BTC");
             }
             else if quantity < 0f64 {
                 let quantity_btc = self.btc * (quantity / 100f64);
-                self.usdt += quantity_btc * quantity;
+                self.usdt += quantity_btc * price;
                 self.btc -=  quantity_btc;
                 println!("We sell {} of BTC", quantity_btc * quantity);
             }
