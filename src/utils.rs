@@ -12,19 +12,32 @@ use burn::{
     nn::loss::{MSELoss, Reduction},
 };
 
-pub fn data_to_tensor<B: Backend>(data: MyData) -> Tensor<B, 4> {
-    let orderbook = Tensor::<B, 2>::from_data(Data::<f32, 2>::from(data.orderbook.last().unwrap().clone()).convert()).unsqueeze::<4>();
-    orderbook
+pub fn data_to_tensor<B: Backend>(data: MyData) -> Option<Tensor<B, 4>> {
+    if data.orderbook.is_empty() {
+        println!("Vecteur vide");
+        None
+    }
+    else {
+        let orderbook = Tensor::<B, 2>::from_data(Data::<f32, 2>::from(data.orderbook.last().unwrap().clone()).convert()).unsqueeze::<4>();
+        Some(orderbook)
+    }
 }
 
 pub fn data_to_vec_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
-    let orderbooks = data.orderbook
+    if data.orderbook.is_empty() {
+        println!("Vecteur vide");
+        vec![]
+    }
+    else {
+        let orderbooks = data.orderbook
         .iter()
         .map(|orderbook: &[[f32; 2]; 40]| Data::<f32, 2>::from(orderbook.clone()))
         .map(|data| Tensor::<B, 2>::from_data(data.convert()))
         .map(|tensor| tensor.unsqueeze::<4>())
         .collect();
     orderbooks
+    }
+    
 }
 
 pub struct PorteFeuille {

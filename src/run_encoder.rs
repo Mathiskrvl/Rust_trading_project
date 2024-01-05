@@ -15,9 +15,11 @@ pub fn run_encoder<B: Backend>(encoder_file: String, rx:  Receiver<MyData>, tx: 
     let model= EncoderConfig::new().init_with::<B>(record);
     let mut state: Option<(Tensor<B, 2>, Tensor<B, 2>)> = None;
     for recu in rx {
-        let input = data_to_tensor::<B>(recu);
-        let (output, c, h) = model.forward(input.clone(), state);
-        state = Some((c, h));
-        tx.send(output).unwrap();
+        let input_encoder = data_to_tensor::<B>(recu);
+        if let Some(input) = input_encoder {
+            let (output, c, h) = model.forward(input, state);
+            state = Some((c, h));
+            tx.send(output).unwrap();
+        }
     }
 }

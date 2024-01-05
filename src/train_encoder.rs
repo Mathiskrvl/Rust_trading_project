@@ -31,11 +31,11 @@ fn main() {
         Some(init_model_input.trim().to_string())
     };
 
-    train_encoder(lr, init_model);
+    train_encoder(lr, init_model, 5000);
     // testing();
 }
 
-fn train_encoder(lr: f64, init_model: Option<String>) {
+fn train_encoder(lr: f64, init_model: Option<String>, record: usize) {
     let (tx, rx) = mpsc::channel();
     let miner_btc = thread::spawn(move || {
         get_data(tx, "btcusdt");
@@ -84,7 +84,7 @@ fn train_encoder(lr: f64, init_model: Option<String>) {
                 let grads = loss.backward();
                 let grads = GradientsParams::from_grads(grads, &model);
                 model = optim.step(lr, model, grads);
-                if compteur_iter % 5000 == 0 {
+                if compteur_iter % record == 0 {
                     compteur_iter = 0;
                     count_save += 1;
                     let record = optim.to_record();
