@@ -1,4 +1,6 @@
 use std::time::Instant;
+use reqwest::{self, blocking::Client};
+use serde_json::Value;
 use crate::get_data::MyData;
 use crate::encoder::autoencoder::AutoencoderConfig;
 use burn::{
@@ -21,13 +23,80 @@ pub fn data_to_tensor<B: Backend>(data: MyData) -> Vec<Tensor<B, 4>> {
     orderbooks
 }
 
-pub fn reward() -> f32{
-    todo!()
+pub struct PorteFeuille {
+    client : Client,
+    btc: f64,
+    usdt: f64,
+    first_state: f64,
 }
 
-pub fn trade() {
-    todo!()
+impl PorteFeuille {
+    pub fn new(usdt: f64) -> Self {
+        let url = String::from("https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT");
+        let client = Client::new();
+        let response = client.get(&url)
+                             .send()
+                             .expect("erreur lors de la requete");
+        let res_json: Value = response.json().expect("erreur lors de la conversion en JSON");
+        let price = res_json
+            .get("price")
+            .expect("Iln'y a pas de price dans cette réponse")
+            .as_str()
+            .expect("Erreur de conversion")
+            .parse::<f64>()
+            .expect("Nombre pas valide");
+        let moitie = usdt / 2f64;
+        Self {
+            client,
+            btc : moitie / price,
+            usdt: moitie,
+            first_state : usdt,
+        }
+    }
+    fn state(&self) -> f64 {
+        let price = self.get_btc_price();
+        self.btc * price + self.usdt
+    }
+    pub fn trade(&mut self, quantity: f64, epsilon: f64) {
+        if (quantity >= 0f64 + epsilon) || (quantity <= 0f64 - epsilon)  {
+            let price = self.get_btc_price();
+            if quantity > 0f64 {
+                let quantity_usdt = self.usdt * (quantity / 100f64);
+                self.btc +=  quantity_usdt / quantity;
+                self.usdt -= quantity_usdt;
+                println!("We buy {quantity_usdt} of BTC");
+            }
+            else if quantity < 0f64 {
+                let quantity_btc = self.btc * (quantity / 100f64);
+                self.usdt += quantity_btc * quantity;
+                self.btc -=  quantity_btc;
+                println!("We sell {} of BTC", quantity_btc * quantity);
+            }
+        }
+        else {
+            println!("Waiting good oportunities");
+        }
+    }
+    fn get_btc_price(&self) -> f64 {
+        let url = String::from("https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT");
+        let response = self.client.get(&url)
+                             .send()
+                             .expect("erreur lors de la requete");
+        let res_json: Value = response.json().expect("erreur lors de la conversion en JSON");
+        res_json
+            .get("price")
+            .expect("Iln'y a pas de price dans cette réponse")
+            .as_str()
+            .expect("Erreur de conversion")
+            .parse::<f64>()
+            .expect("Nombre pas valide")
+    }
+    pub fn reward(&self) -> f64 {
+        let state = self.state();
+        (state - self.first_state) / self.first_state
+    }
 }
+
 
 
 #[allow(dead_code)]

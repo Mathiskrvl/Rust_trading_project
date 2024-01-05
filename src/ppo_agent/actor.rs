@@ -18,7 +18,7 @@ pub struct Actor<B: Backend> {
 }
 
 impl<B: Backend> Actor<B> {
-    pub fn forward(&self, input: Tensor<B, 2>, action_range: f32) -> (Tensor<B, 2>, Tensor<B, 2>) {
+    pub fn forward(&self, input: Tensor<B, 2>, action_range: f64) -> (Tensor<B, 2>, Tensor<B, 2>) {
         let x = self.fc1.forward(input);
         let x = self.relu.forward(x);
         let x = self.fc2.forward(x);

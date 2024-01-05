@@ -4,7 +4,7 @@ mod utils;
 mod get_data;
 mod run_encoder;
 
-use utils::reward;
+use utils::PorteFeuille;
 use run_encoder::run_encoder;
 use ppo_agent::ppo::{PPOAgent, LearnerPPOAgent};
 use get_data::get_data;
@@ -43,10 +43,10 @@ fn main() {
     // record de l'agent toute les 18 updates soit ~1h
     // On estime qu'il faut environ 100 000 update soit 232 jours pour avoir un model fiable, dout l'importance de rajouter 
     // à ce programme des système de curiosité et multi-agents pour converger + vite vers un bot de trading fiable.
-    train_agent(agent_type, init_agent, init_encoder, 100f32, 0.9, 0.2, 1e-4, 2e-4, 10, 10, 2048, 18)
+    train_agent(agent_type, init_agent, init_encoder, 100f64, 0.1, 0.9, 0.2, 1e-4, 2e-4, 10, 10, 2048, 18)
 }
 
-fn train_agent(agent_type: String, init_agent: Option<String>, init_encoder: String, action_range: f32, gamma: f32, epsilon: f32, lr_a: f64, lr_c: f64, actor_update_step: usize, critic_update_step: usize, batch_size: usize, record: usize) {
+fn train_agent(agent_type: String, init_agent: Option<String>, init_encoder: String, action_range: f64, phi: f64, gamma: f64, epsilon: f64, lr_a: f64, lr_c: f64, actor_update_step: usize, critic_update_step: usize, batch_size: usize, record: usize) {
     type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
     type MyAutodiffBackend = Autodiff<MyBackend>;
     std::fs::create_dir("agent").ok();
@@ -60,6 +60,8 @@ fn train_agent(agent_type: String, init_agent: Option<String>, init_encoder: Str
         run_encoder::<MyBackend>(init_encoder, rx_data, tx_enc);
     });
     let train_agent = thread::spawn(move || {
+        // configurer la quantity de usdt et btc de départ. Un peu près 2000$ diviser entre 50% usdt et 50% btc
+        let mut wallet = PorteFeuille::new(2000f64);
         let agent;
         let optim_actor;
         let optim_critic;
@@ -86,15 +88,16 @@ fn train_agent(agent_type: String, init_agent: Option<String>, init_encoder: Str
         for recu in rx_enc {
             let state = Tensor::from_inner(recu);
             let action = learner.choose_action(state.clone(), false);
-            let reward = reward(); // todo
+            wallet.trade(action, phi);
+            let reward = wallet.reward();
             compteur_iter += 1;
             learner.store_transition(state, action, reward);
-            if compteur_iter >= batch_size {
+            if compteur_iter >= batch_size || reward > 10f64 {
                 compteur_iter = 0;
                 learner.update();
                 compteur_update += 1;
             }
-            if compteur_update >= record {
+            if compteur_update >= record || reward > 10f64{
                 compteur_update = 0;
                 compteur_record += 1;
                 learner.record_agent(agent_type.as_str(), format!("trader_{compteur_record}").as_str());
