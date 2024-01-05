@@ -1,18 +1,35 @@
-Pour éxecuter les entrainement :
+# Guide d'Entraînement pour le Projet de Trading Automatique
 
-Pour l'environnement:   cargo run --bin train-encoder
+## Entraînement de l'Environnement
+Pour entraîner l'environnement, utilisez la commande suivante :
+```bash 
+cargo run --bin train-encoder
+```
+~10 jours d'entraînements
 
-Pour l'agent:   cargo run --bin train-agent
+## Entraînement de l'Agent
+Pour entraîner l'agent, exécutez la commande suivante :
+```bash 
+cargo run --bin train-agent
+```
+~1 an pour être viable, j'avoue c'est long, j'ai la possibilité d'implémenter des algorithmes de curiosité, de multi-agent, de faire des replay buffers pour entraîner sur des données déjà utilisées et aussi d'utiliser d'autres algos pour les agents comme le 'Soft Actor Critic'.
 
-Une fois le tout entrainé lancer l'agent de trading:    cargo run
+Une fois le tout entraîné, lancer l'agent de trading : cargo run
+```bash 
+cargo run
+```
 
+Actuellement, le processus du code se passe comme suit :
 
+1. On récupère les order books du BTC/USDT.
+2. On les fait passer dans un encodeur qui intègre des dépendances temporelles.
+3. On envoie les données de sortie de l'encodeur qui va être l'environnement de notre agent qui va prendre des actions (acheter, vendre, attendre).
 
-Pour entrainement dans le cloud le meilleur rapport qualité/prix est AWS G4ad, si en Spot mettre souvent des record du model dans les S3.
+Pour l'entraînement dans le cloud, le meilleur rapport qualité/prix est AWS G4ad. Si en Spot, mettre souvent des records du modèle dans les S3.
 
-Le framework Burn ici utilisé permet d'entrainé nos agents avec n'importe quelle API de GPU (OpenGL, DirectX, Vulkan) grâce à l'utilisation de wgpu qui rend cela possible.
+Le framework Burn ici utilisé permet d'entraîner nos agents avec n'importe quelle API de GPU (OpenGL, DirectX, Vulkan) grâce à l'utilisation de wgpu qui rend cela possible.
 
-C'est un avantage certain par rapport au autre framework de deep learning classique qui sont souvent bloquer à Nvidia due a la technologie Cuda, tout en ayant une efficacité relativement égal.
+C'est un avantage certain par rapport aux autres frameworks de deep learning classiques qui sont souvent limités à Nvidia en raison de la technologie CUDA, tout en ayant une efficacité relativement égale.
 
 
 Crédit:
