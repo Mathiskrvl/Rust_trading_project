@@ -38,7 +38,7 @@ Le framework Burn ici utilisé permet d'entraîner nos agents avec n'importe que
 C'est un avantage certain par rapport aux autres frameworks de deep learning classiques qui sont souvent limités à Nvidia en raison de la technologie CUDA, tout en ayant une efficacité relativement égale.
 
 ## Architecture du Bot de trading
-![Architecture du Bot de trading](architecture.png)
+![Architecture du Bot de trading](Architecture.png)
 
 
 ## Crédit
