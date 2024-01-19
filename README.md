@@ -55,4 +55,4 @@ https://github.com/quantumiracle/Popular-RL-Algorithms/blob/master/ppo_continuou
 
 ## Licence
 Ce code appartient entièrement à Mathis Keraval et Idir Guettab
-Il est interdit de le rendre publique
+Il est interdit de l'utiliser a d'autres fin que pour l'enseignement.
